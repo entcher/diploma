@@ -34,4 +34,4 @@ class MainWindow(QMainWindow):
     def define_pose(self):
         if self.file_path_label.text() == 'Выберите файл!':
             return
-        show(self.file_path_label)
+        show(self.file_path_label.text())

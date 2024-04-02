@@ -33,7 +33,6 @@ class Human:
         left_ankle = self.keypoints["LEFT_ANKLE"]
         if angle_exists(left_hip, left_knee, left_ankle):
             left_leg_angle = get_angle(left_hip, left_knee, left_ankle)
-            print(left_leg_angle)
 
         right_leg_angle = -1
         right_hip = self.keypoints["RIGHT_HIP"]
@@ -41,7 +40,6 @@ class Human:
         right_ankle = self.keypoints["RIGHT_ANKLE"]
         if angle_exists(right_hip, right_knee, right_ankle):
             right_leg_angle = get_angle(right_hip, right_knee, right_ankle)
-            print(right_leg_angle)
 
         return True if left_leg_angle > 170 and right_leg_angle > 170 else False
 
@@ -52,7 +50,6 @@ class Human:
         left_ankle = self.keypoints["LEFT_ANKLE"]
         if angle_exists(left_hip, left_knee, left_ankle):
             left_leg_angle = get_angle(left_hip, left_knee, left_ankle)
-            print(left_leg_angle)
 
         right_leg_angle = -1
         right_hip = self.keypoints["RIGHT_HIP"]
@@ -60,25 +57,33 @@ class Human:
         right_ankle = self.keypoints["RIGHT_ANKLE"]
         if angle_exists(right_hip, right_knee, right_ankle):
             right_leg_angle = get_angle(right_hip, right_knee, right_ankle)
-            print(right_leg_angle)
 
-        return True if left_leg_angle < 170 and right_leg_angle < 170 else False
+        isThighStraight = abs(
+            left_hip.y - left_knee.y) < 0.1 or abs(right_hip.y - right_knee.y) < 0.1
+        return True if left_leg_angle < 170 and right_leg_angle < 170 and isThighStraight else False
 
     def person_lies(self) -> bool:
         left_shoulder = self.keypoints["LEFT_SHOULDER"]
         left_hip = self.keypoints["LEFT_HIP"]
         left_ankle = self.keypoints["LEFT_ANKLE"]
-        if left_shoulder.x < left_hip.x < left_ankle.x or left_ankle.x < left_hip.x < left_shoulder.x:
+
+        if (left_shoulder.x < left_hip.x < left_ankle.x or left_ankle.x < left_hip.x < left_shoulder.x) and \
+                (abs(left_shoulder.y - left_hip.y) < 0.1) and (abs(left_shoulder.y - left_ankle.y) < 0.1) and (abs(left_ankle.y - left_hip.y) < 0.1):
             return True
         return False
 
     def person_walks(self) -> bool:
         left_heel = self.keypoints["LEFT_HEEL"]
         right_heel = self.keypoints["RIGHT_HEEL"]
+        left_foot_index = self.keypoints["LEFT_FOOT_INDEX"]
+        right_foot_index = self.keypoints["RIGHT_FOOT_INDEX"]
+
+        if left_foot_index.x > left_heel.x and right_foot_index.x < right_heel.x:
+            return False
+
         left_hip = self.keypoints["RIGHT_HIP"]
         if angle_exists(left_heel, right_heel, left_hip):
             angle = get_angle(left_heel, left_hip, right_heel)
-            print(angle)
             if angle < 70:
                 return True
         return False
@@ -86,6 +91,12 @@ class Human:
     def person_runs(self) -> bool:
         left_heel = self.keypoints["LEFT_HEEL"]
         right_heel = self.keypoints["RIGHT_HEEL"]
+        left_foot_index = self.keypoints["LEFT_FOOT_INDEX"]
+        right_foot_index = self.keypoints["RIGHT_FOOT_INDEX"]
+
+        if left_foot_index.x > left_heel.x and right_foot_index.x < right_heel.x:
+            return False
+
         left_hip = self.keypoints["RIGHT_HIP"]
         if angle_exists(left_heel, right_heel, left_hip):
             angle = get_angle(left_heel, left_hip, right_heel)

@@ -14,6 +14,7 @@ def put_text(image, text):
                         fontScale, color, thickness, cv2.LINE_AA)
 
 
+# add isVideo param
 def show(file_path):
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
@@ -22,8 +23,7 @@ def show(file_path):
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5)
 
-    # add filepath instead of hardcode
-    img = cv2.imread('images/bending.jpg')
+    img = cv2.imread(file_path)
     RGB = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     results = pose.process(RGB)
 
@@ -38,3 +38,5 @@ def show(file_path):
     cv2.imshow('Результат', img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
