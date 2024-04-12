@@ -48,16 +48,7 @@ def draw_finish_text(img):
                 text_color, font_thickness)
 
 
-def convert_gui_exercises_to_simple(gui_exercises):
-    exercises = {}
-    for ex_name, ex_count in gui_exercises.items():
-        ex_count_int = int(ex_count.text())
-        if ex_count_int > 0:
-            exercises[ex_name.text()] = ex_count_int
-    return exercises
-
-
-def show(gui_exercises):
+def show_cam(exercises):
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
 
@@ -65,7 +56,6 @@ def show(gui_exercises):
         min_detection_confidence=0.5,
         min_tracking_confidence=0.5)
 
-    exercises = convert_gui_exercises_to_simple(gui_exercises)
     stage = None
 
     cap = cv2.VideoCapture(0)
