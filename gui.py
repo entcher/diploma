@@ -1,5 +1,6 @@
-from detector import show_cam
-from PyQt5.QtCore import Qt, QItemSelectionModel
+from video_gui import VideoWindow
+from PyQt5.QtGui import QCloseEvent
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QMainWindow,
     QTableWidget,
@@ -7,8 +8,10 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QPushButton,
+    QLabel,
     QStyle,
     QHBoxLayout,
+    QComboBox,
     QMessageBox)
 
 
@@ -45,7 +48,13 @@ class MainWindow(QMainWindow):
         self.move_down_button.clicked.connect(self.move_down)
 
         self.start_button = QPushButton('Начать')
-        self.start_button.clicked.connect(self.start_workout)
+        self.start_button.clicked.connect(self.open_video_window)
+
+        self.set_of_exercises_label = QLabel('Выберите комплекс упражнений')
+        self.set_of_exercises = QComboBox()
+        set_of_exercises_items = ['Свой', 'Утренний', 'Дневной', 'Ночной']
+        self.set_of_exercises.addItems(set_of_exercises_items)
+        self.set_of_exercises.currentIndexChanged.connect(self.on_set_changed)
 
         self.buttons_layout = QHBoxLayout()
         self.buttons_layout.addWidget(self.move_up_button)
@@ -53,11 +62,21 @@ class MainWindow(QMainWindow):
 
         self.layout.addWidget(self.table)
         self.layout.addLayout(self.buttons_layout)
+        self.layout.addWidget(self.set_of_exercises_label)
+        self.layout.addWidget(self.set_of_exercises)
         self.layout.addWidget(self.start_button)
 
+        self.video_window = None
+
     def init_table(self):
-        exercises_names = ['Сгибания в локтях',
-                           'Приседания', 'Наклоны', 'Отжимания']
+        exercises_names = [
+            'Сгибания в локтях',
+            'Приседания',
+            'Наклоны корпуса вперед',
+            'Наклоны корпуса в стороны',
+            'Наклоны головы в стороны'
+        ]
+
         for exercise in exercises_names:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -127,28 +146,42 @@ class MainWindow(QMainWindow):
             case 'Свой':
                 self.set_exercises()
             case 'Утренний':
-                self.set_exercises(squats=10, bends=10, pushups=5)
+                self.set_exercises(squats=10, bends_over=10)
             case 'Дневной':
-                self.set_exercises(squats=20, bends=10, pushups=10)
+                self.set_exercises(squats=20, bends_over=10)
             case 'Ночной':
-                self.set_exercises(squats=2, bends=10)
+                self.set_exercises(squats=2, bends_over=10)
 
-    def set_exercises(self, curls=0, squats=0, bends=0, pushups=0):
-        for ex_label, ex_input in self.exercises.items():
-            match ex_label.text():
-                case 'Сгибания в локтях':
-                    ex_input.setText(str(curls))
-                case 'Приседания':
-                    ex_input.setText(str(squats))
-                case 'Наклоны':
-                    ex_input.setText(str(bends))
-                case 'Отжимания':
-                    ex_input.setText(str(pushups))
+    def set_exercises(self, curls=0, squats=0, bends_over=0, bends_sideways=0):
+        exercise_counts = {
+            'Сгибания в локтях': curls,
+            'Приседания': squats,
+            'Наклоны вперед': bends_over,
+            'Наклоны в стороны': bends_sideways
+        }
 
-    def start_workout(self):
+        for row in range(self.table.rowCount()):
+            ex_name = self.table.item(row, 0).text()
+            if ex_name in exercise_counts:
+                self.table.item(row, 1).setText(str(exercise_counts[ex_name]))
+
+    def open_video_window(self):
+        if self.video_window is not None:
+            QMessageBox.warning(
+                self, 'Ошибка', 'Сначала закройте окно с видео')
+            
         exercises = self.get_table_data()
         if any(value > 0 for value in exercises.values()):
-            show_cam(exercises)
+            self.video_window = VideoWindow(exercises)
+            self.video_window.show()
         else:
             QMessageBox.warning(
                 None, 'Ошибка', 'Не выбрано ни одно упражнение')
+
+    def closeEvent(self, event: QCloseEvent):
+        if self.video_window is None or not self.video_window.isVisible():
+            event.accept()
+        else:
+            QMessageBox.warning(
+                self, 'Ошибка', 'Сначала закройте окно с видео')
+            event.ignore()
