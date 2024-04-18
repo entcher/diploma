@@ -1,4 +1,6 @@
+import os
 from video_gui import VideoWindow
+from stats import show_stats
 from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -47,9 +49,6 @@ class MainWindow(QMainWindow):
         self.move_down_button.setIcon(icon_arrow_down)
         self.move_down_button.clicked.connect(self.move_down)
 
-        self.start_button = QPushButton('Начать')
-        self.start_button.clicked.connect(self.open_video_window)
-
         self.set_of_exercises_label = QLabel('Выберите комплекс упражнений')
         self.set_of_exercises = QComboBox()
         set_of_exercises_items = ['Свой', 'Утренний', 'Дневной', 'Ночной']
@@ -60,10 +59,17 @@ class MainWindow(QMainWindow):
         self.buttons_layout.addWidget(self.move_up_button)
         self.buttons_layout.addWidget(self.move_down_button)
 
+        self.stats_button = QPushButton('Показать статистику')
+        self.stats_button.clicked.connect(self.on_show_stats_click)
+
+        self.start_button = QPushButton('Начать')
+        self.start_button.clicked.connect(self.open_video_window)
+
         self.layout.addWidget(self.table)
         self.layout.addLayout(self.buttons_layout)
         self.layout.addWidget(self.set_of_exercises_label)
         self.layout.addWidget(self.set_of_exercises)
+        self.layout.addWidget(self.stats_button)
         self.layout.addWidget(self.start_button)
 
         self.video_window = None
@@ -133,12 +139,10 @@ class MainWindow(QMainWindow):
             value = int(item.text())
             if value < 0:
                 item.setText('0')
-                QMessageBox.information(
-                    None, 'Ошибка', 'Введите положительное число')
+                self.display_warning('Введите положительное число')
         except ValueError:
             item.setText('0')
-            QMessageBox.information(
-                None, 'Ошибка', 'Введите положительное число')
+            self.display_warning('Введите положительное число')
 
     def on_set_changed(self):
         selected_set = self.set_of_exercises.currentText()
@@ -165,23 +169,30 @@ class MainWindow(QMainWindow):
             if ex_name in exercise_counts:
                 self.table.item(row, 1).setText(str(exercise_counts[ex_name]))
 
+    def on_show_stats_click(self):
+        path = 'data.csv'
+        if not os.path.exists(path):
+            self.display_warning('Файл со статистикой не найден')
+        else:
+            show_stats()
+
     def open_video_window(self):
         if self.video_window is not None:
-            QMessageBox.warning(
-                self, 'Ошибка', 'Сначала закройте окно с видео')
-            
+            self.display_warning('Сначала закройте окно с видео')
+
         exercises = self.get_table_data()
         if any(value > 0 for value in exercises.values()):
             self.video_window = VideoWindow(exercises)
             self.video_window.show()
         else:
-            QMessageBox.warning(
-                None, 'Ошибка', 'Не выбрано ни одно упражнение')
+            self.display_warning('Не выбрано ни одно упражнение')
 
     def closeEvent(self, event: QCloseEvent):
         if self.video_window is None or not self.video_window.isVisible():
             event.accept()
         else:
-            QMessageBox.warning(
-                self, 'Ошибка', 'Сначала закройте окно с видео')
+            self.display_warning('Сначала закройте окно с видео')
             event.ignore()
+
+    def display_warning(self, text: str):
+        QMessageBox.warning(self, 'Ошибка', text)

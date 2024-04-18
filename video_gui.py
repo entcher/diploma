@@ -1,9 +1,12 @@
 from workout import Workout, Phase
 from ui_writer import *
+from stats import write_csv
+from utility import find_dicts_difference
+
 import cv2
 import mediapipe as mp
 from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QCloseEvent, QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
 
 
@@ -32,6 +35,7 @@ class VideoWindow(QWidget):
         self.timer.start(30)
 
         self.phase = Phase.Start
+        self.start_exercises = exercises.copy()
         self.current_exercise = next(iter(exercises))
 
     def display_frame(self, exercises):
@@ -42,15 +46,19 @@ class VideoWindow(QWidget):
         # add method to check if person fits the screen
         if not exercises:
             write_finish_text(frame)
-        write_exercises(frame, exercises)
+            self.cap.release()
+            done_exercises = find_dicts_difference(
+                self.start_exercises, exercises)
+            write_csv(done_exercises)
 
+        write_exercises(frame, exercises)
         RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = VideoWindow.pose.process(RGB)
 
         try:
             landmarks = results.pose_landmarks.landmark
             workout = Workout(landmarks)
-            
+
             self.phase = workout.do_exercise(self.current_exercise, self.phase)
 
             if self.phase == None:
@@ -74,8 +82,3 @@ class VideoWindow(QWidget):
             frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(image)
         self.video_label.setPixmap(pixmap)
-
-    def closeEvent(self, event: QCloseEvent):
-        self.cap.release()
-        cv2.destroyAllWindows()
-        event.accept()
