@@ -1,6 +1,4 @@
-from point import Point
-from formulas import *
-
+from point import *
 from enum import Enum
 import mediapipe as mp
 
@@ -40,7 +38,7 @@ class Workout:
 
         if angle > 140:
             return Phase.Doing
-        if angle < 50 and phase == Phase.Doing:
+        elif angle < 50 and phase == Phase.Doing:
             return Phase.Done
         else:
             return phase
@@ -73,3 +71,8 @@ class Workout:
 
     def squat(self, phase: Phase) -> Phase:
         pass
+
+    def person_not_fits(self) -> bool:
+        if any(point.visibility < 0.8 for point in self.skeleton.values()):
+            return True
+        return False
