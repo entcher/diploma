@@ -1,4 +1,5 @@
 import os
+import json
 from video_gui import VideoWindow
 from stats import show_stats
 from PyQt5.QtGui import QCloseEvent
@@ -55,9 +56,8 @@ class MainWindow(QMainWindow):
         self.set_of_exercises.addItems(set_of_exercises_items)
         self.set_of_exercises.currentIndexChanged.connect(self.on_set_changed)
 
-        self.buttons_layout = QHBoxLayout()
-        self.buttons_layout.addWidget(self.move_up_button)
-        self.buttons_layout.addWidget(self.move_down_button)
+        self.save_set_button = QPushButton('Сохранить комплекс')
+        self.save_set_button.clicked.connect(self.on_save_set_click)
 
         self.stats_button = QPushButton('Показать статистику')
         self.stats_button.clicked.connect(self.on_show_stats_click)
@@ -65,10 +65,18 @@ class MainWindow(QMainWindow):
         self.start_button = QPushButton('Начать')
         self.start_button.clicked.connect(self.open_video_window)
 
+        self.up_down_buttons_layout = QHBoxLayout()
+        self.up_down_buttons_layout.addWidget(self.move_up_button)
+        self.up_down_buttons_layout.addWidget(self.move_down_button)
+
+        self.set_save_layout = QHBoxLayout()
+        self.set_save_layout.addWidget(self.set_of_exercises)
+        self.set_save_layout.addWidget(self.save_set_button)
+
         self.layout.addWidget(self.table)
-        self.layout.addLayout(self.buttons_layout)
+        self.layout.addLayout(self.up_down_buttons_layout)
         self.layout.addWidget(self.set_of_exercises_label)
-        self.layout.addWidget(self.set_of_exercises)
+        self.layout.addLayout(self.set_save_layout)
         self.layout.addWidget(self.stats_button)
         self.layout.addWidget(self.start_button)
 
@@ -145,29 +153,41 @@ class MainWindow(QMainWindow):
             self.display_warning('Введите положительное число')
 
     def on_set_changed(self):
-        selected_set = self.set_of_exercises.currentText()
-        match selected_set:
-            case 'Свой':
-                self.set_exercises()
-            case 'Утренний':
-                self.set_exercises(squats=10, bends_over=10)
-            case 'Дневной':
-                self.set_exercises(squats=20, bends_over=10)
-            case 'Ночной':
-                self.set_exercises(squats=2, bends_over=10)
+        path = 'saved_sets.json'
+        if not os.path.exists(path):
+            return
 
-    def set_exercises(self, curls=0, squats=0, bends_over=0, bends_sideways=0):
-        exercise_counts = {
-            'Сгибания в локтях': curls,
-            'Приседания': squats,
-            'Наклоны вперед': bends_over,
-            'Наклоны в стороны': bends_sideways
-        }
+        with open(path, 'r') as json_file:
+            json_data = json.load(json_file)
+
+        selected_set = self.set_of_exercises.currentText()
+        exercise_counts = json_data.get(selected_set)
+        if exercise_counts is None:
+            return
 
         for row in range(self.table.rowCount()):
             ex_name = self.table.item(row, 0).text()
-            if ex_name in exercise_counts:
-                self.table.item(row, 1).setText(str(exercise_counts[ex_name]))
+            ex_count = exercise_counts.get(ex_name, 0)
+            self.table.item(row, 1).setText(str(ex_count))
+
+    def on_save_set_click(self):
+        path = 'saved_sets.json'
+        selected_set = self.set_of_exercises.currentText()
+        if selected_set == 'Свой':
+            return
+
+        json_data = {}
+        if os.path.exists(path):
+            with open(path, 'r') as json_file:
+                json_data = json.load(json_file)
+            if selected_set in json_data.keys():
+                del json_data[selected_set]
+
+        exercises_dict = self.get_table_data()
+        json_data[selected_set] = exercises_dict
+
+        with open(path, 'w') as json_file:
+            json.dump(json_data, json_file, indent=4, ensure_ascii=False)
 
     def on_show_stats_click(self):
         path = 'data.csv'
@@ -179,6 +199,7 @@ class MainWindow(QMainWindow):
     def open_video_window(self):
         if self.video_window is not None:
             self.display_warning('Сначала закройте окно с видео')
+            return
 
         exercises = self.get_table_data()
         if any(value > 0 for value in exercises.values()):
