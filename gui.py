@@ -1,6 +1,7 @@
 import os
 import json
 from video_gui import VideoWindow
+from save_new_set_window import SaveNewSetWindow
 from stats import show_stats
 from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtCore import Qt
@@ -52,12 +53,14 @@ class MainWindow(QMainWindow):
 
         self.set_of_exercises_label = QLabel('Выберите комплекс упражнений')
         self.set_of_exercises = QComboBox()
-        set_of_exercises_items = ['Свой', 'Утренний', 'Дневной', 'Ночной']
-        self.set_of_exercises.addItems(set_of_exercises_items)
+        self.load_sets()
         self.set_of_exercises.currentIndexChanged.connect(self.on_set_changed)
 
-        self.save_set_button = QPushButton('Сохранить комплекс')
+        self.save_set_button = QPushButton('Сохранить')
         self.save_set_button.clicked.connect(self.on_save_set_click)
+
+        self.delete_set_button = QPushButton('Удалить')
+        self.delete_set_button.clicked.connect(self.on_delete_set_click)
 
         self.stats_button = QPushButton('Показать статистику')
         self.stats_button.clicked.connect(self.on_show_stats_click)
@@ -72,6 +75,7 @@ class MainWindow(QMainWindow):
         self.set_save_layout = QHBoxLayout()
         self.set_save_layout.addWidget(self.set_of_exercises)
         self.set_save_layout.addWidget(self.save_set_button)
+        self.set_save_layout.addWidget(self.delete_set_button)
 
         self.layout.addWidget(self.table)
         self.layout.addLayout(self.up_down_buttons_layout)
@@ -101,6 +105,10 @@ class MainWindow(QMainWindow):
 
             count_cell = QTableWidgetItem('0')
             self.table.setItem(row, 1, count_cell)
+
+    def fill_table_with_zeros(self):
+        for row in range(self.table.rowCount()):
+            self.table.item(row, 1).setText('0')
 
     def get_table_data(self) -> dict[str, int]:
         exercises = {}
@@ -152,7 +160,26 @@ class MainWindow(QMainWindow):
             item.setText('0')
             self.display_warning('Введите положительное число')
 
+    def load_sets(self):
+        self.set_of_exercises.clear()
+
+        sets = ['Новый']
+        path = 'saved_sets.json'
+        if not os.path.exists(path):
+            self.set_of_exercises.addItems(sets)
+            return
+
+        with open(path, 'r') as json_file:
+            json_data = json.load(json_file)
+        sets.extend(json_data.keys())
+        self.set_of_exercises.addItems(sets)
+
     def on_set_changed(self):
+        selected_set = self.set_of_exercises.currentText()
+        if selected_set == 'Новый':
+            self.fill_table_with_zeros()
+            return
+
         path = 'saved_sets.json'
         if not os.path.exists(path):
             return
@@ -160,7 +187,6 @@ class MainWindow(QMainWindow):
         with open(path, 'r') as json_file:
             json_data = json.load(json_file)
 
-        selected_set = self.set_of_exercises.currentText()
         exercise_counts = json_data.get(selected_set)
         if exercise_counts is None:
             return
@@ -171,23 +197,39 @@ class MainWindow(QMainWindow):
             self.table.item(row, 1).setText(str(ex_count))
 
     def on_save_set_click(self):
-        path = 'saved_sets.json'
+        exercises = self.get_table_data()
         selected_set = self.set_of_exercises.currentText()
-        if selected_set == 'Свой':
+
+        if selected_set != 'Новый':
+            path = 'saved_sets.json'
+            with open(path, 'r') as json_file:
+                sets = json.load(json_file)
+
+            sets[selected_set] = exercises
+            with open(path, 'w') as json_file:
+                json.dump(sets, json_file, indent=4, ensure_ascii=False)
+        else:
+            self.setEnabled(False)
+            self.save_new_set_window = SaveNewSetWindow(exercises)
+            self.save_new_set_window.close_signal.connect(
+                lambda: self.setEnabled(True))
+            self.save_new_set_window.close_signal.connect(self.load_sets)
+            self.save_new_set_window.show()
+
+    def on_delete_set_click(self):
+        selected_set = self.set_of_exercises.currentText()
+        if selected_set == 'Новый':
+            self.fill_table_with_zeros()
             return
 
-        json_data = {}
-        if os.path.exists(path):
-            with open(path, 'r') as json_file:
-                json_data = json.load(json_file)
-            if selected_set in json_data.keys():
-                del json_data[selected_set]
-
-        exercises_dict = self.get_table_data()
-        json_data[selected_set] = exercises_dict
+        path = 'saved_sets.json'
+        with open(path, 'r') as json_file:
+            sets = json.load(json_file)
+        sets.pop(selected_set, None)
 
         with open(path, 'w') as json_file:
-            json.dump(json_data, json_file, indent=4, ensure_ascii=False)
+            json.dump(sets, json_file, indent=4, ensure_ascii=False)
+        self.load_sets()
 
     def on_show_stats_click(self):
         path = 'data.csv'
@@ -212,7 +254,7 @@ class MainWindow(QMainWindow):
         if self.video_window is None or not self.video_window.isVisible():
             event.accept()
         else:
-            self.display_warning('Сначала закройте окно с видео')
+            self.display_warning('Сначала закройте другие окна')
             event.ignore()
 
     def display_warning(self, text: str):
