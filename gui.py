@@ -3,9 +3,9 @@ import json
 from video_gui import VideoWindow
 from save_new_set_window import SaveNewSetWindow
 from stats import show_stats
-from PyQt5.QtGui import QCloseEvent
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
+    QApplication,
     QMainWindow,
     QTableWidget,
     QTableWidgetItem,
@@ -83,8 +83,6 @@ class MainWindow(QMainWindow):
         self.layout.addLayout(self.set_save_layout)
         self.layout.addWidget(self.stats_button)
         self.layout.addWidget(self.start_button)
-
-        self.video_window = None
 
     def init_table(self):
         exercises_names = [
@@ -239,23 +237,18 @@ class MainWindow(QMainWindow):
             show_stats()
 
     def open_video_window(self):
-        if self.video_window is not None:
-            self.display_warning('Сначала закройте окно с видео')
-            return
-
         exercises = self.get_table_data()
         if any(value > 0 for value in exercises.values()):
             self.video_window = VideoWindow(exercises)
+            self.video_window.close_signal.connect(
+                lambda: self.setEnabled(True))
             self.video_window.show()
+            self.setEnabled(False)
         else:
             self.display_warning('Не выбрано ни одно упражнение')
 
-    def closeEvent(self, event: QCloseEvent):
-        if self.video_window is None or not self.video_window.isVisible():
-            event.accept()
-        else:
-            self.display_warning('Сначала закройте другие окна')
-            event.ignore()
+    def closeEvent(self, _):
+        QApplication.closeAllWindows()
 
     def display_warning(self, text: str):
         QMessageBox.warning(self, 'Ошибка', text)
