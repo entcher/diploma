@@ -22,7 +22,8 @@ def show_stats():
     df = pd.read_csv(path)
     df['Дата'] = pd.to_datetime(df['Дата'])
     pivot_table = df.pivot_table(
-        index='Дата', columns='Упражнения', values='Количество повторений', aggfunc='sum')
+        index='Дата', columns='Упражнения', values='Количество повторений', aggfunc='sum'
+    )
     pivot_table.index = pivot_table.index.date
     pivot_table.plot(kind='bar')
 

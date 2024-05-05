@@ -20,8 +20,7 @@ class SaveNewSetWindow(QWidget):
         self.input = QLineEdit()
 
         self.save_button = QPushButton('Сохранить')
-        self.save_button.clicked.connect(
-            lambda: self.save_button_clicked(exercises))
+        self.save_button.clicked.connect(lambda: self.save_button_clicked(exercises))
         self.button_layout = QHBoxLayout()
         self.button_layout.addWidget(self.save_button, alignment=Qt.AlignRight)
 
@@ -37,7 +36,7 @@ class SaveNewSetWindow(QWidget):
         if os.path.exists(path):
             with open(path, 'r') as json_file:
                 json_data = json.load(json_file)
-            json_data.pop(name, None)
+            # json_data.pop(name, None)
 
         json_data[name] = exercises
         with open(path, 'w') as json_file:

@@ -18,15 +18,13 @@ def write_exercises(img, exercises):
         text = f'{ex_name}: {ex_count}'
         text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
         text_w, text_h = text_size
-        if (text_w > max_text_width):
+        if text_w > max_text_width:
             max_text_width = text_w
         total_text_height += text_h + 5
 
-        cv2.putText(img, text, (3, total_text_height),
-                    font, font_scale, text_color, font_thickness)
+        cv2.putText(img, text, (3, total_text_height), font, font_scale, text_color, font_thickness)
 
-    cv2.rectangle(img, (2, 2), (max_text_width+5,
-                  total_text_height+5), text_color_bg)
+    cv2.rectangle(img, (2, 2), (max_text_width + 5, total_text_height + 5), text_color_bg)
 
 
 def write_line(img, text, text_color, background_color):
@@ -37,6 +35,5 @@ def write_line(img, text, text_color, background_color):
     text_size, _ = cv2.getTextSize(text, font, font_scale, font_thickness)
     text_w, text_h = text_size
 
-    cv2.rectangle(img, (2, 2), (text_w+2, text_h+7), background_color, -1)
-    cv2.putText(img, text, (3, text_h+5), font, font_scale,
-                text_color, font_thickness)
+    cv2.rectangle(img, (2, 2), (text_w + 2, text_h + 7), background_color, -1)
+    cv2.putText(img, text, (3, text_h + 5), font, font_scale, text_color, font_thickness)

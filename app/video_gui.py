@@ -15,9 +15,7 @@ class VideoWindow(QWidget):
 
     mp_drawing = mp.solutions.drawing_utils
     mp_pose = mp.solutions.pose
-    pose = mp_pose.Pose(
-        min_detection_confidence=0.5,
-        min_tracking_confidence=0.5)
+    pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
     def __init__(self, exercises):
         super().__init__()
@@ -47,12 +45,13 @@ class VideoWindow(QWidget):
             return
 
         if not self.remained_exercises:
-            write_line(frame, 'План выполнен. Можете закрывать окно',
-                       text_color=(0, 255, 0), background_color=(0, 0, 255))
+            write_line(
+                frame,
+                'План выполнен. Можете закрывать окно',
+                text_color=(0, 255, 0),
+                background_color=(0, 0, 255),
+            )
             self.cap.release()
-            done_exercises = find_dicts_difference(
-                self.start_exercises, self.remained_exercises)
-            write_csv(done_exercises)
 
         RGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = VideoWindow.pose.process(RGB)
@@ -60,13 +59,12 @@ class VideoWindow(QWidget):
         try:
             landmarks = results.pose_landmarks.landmark
             workout = Workout(landmarks)
-            if workout.person_not_fits():
-                raise ValueError()
 
-            write_exercises(frame, self.remained_exercises)
             self.phase = workout.do_exercise(self.current_exercise, self.phase)
+            write_exercises(frame, self.remained_exercises)
+
             if self.phase == None:
-                return                        
+                return
             if self.phase == Phase.Done:
                 self.phase = Phase.Start
                 self.remained_exercises[self.current_exercise] -= 1
@@ -74,19 +72,24 @@ class VideoWindow(QWidget):
                     self.remained_exercises.pop(self.current_exercise)
                     self.current_exercise = next(iter(self.remained_exercises))
         except:
-            write_line(frame, 'Ваше тело должно быть в кадре целиком',
-                       text_color=(0, 0, 0), background_color=(255, 255, 0))
+            write_line(
+                frame,
+                'Отойдите от камеры подальше',
+                text_color=(0, 0, 0),
+                background_color=(255, 255, 0),
+            )
 
         VideoWindow.mp_drawing.draw_landmarks(
-            frame, results.pose_landmarks, VideoWindow.mp_pose.POSE_CONNECTIONS)
+            frame, results.pose_landmarks, VideoWindow.mp_pose.POSE_CONNECTIONS
+        )
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = QImage(
-            frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
+        image = QImage(frame, frame.shape[1], frame.shape[0], QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(image)
         self.video_label.setPixmap(pixmap)
 
     def closeEvent(self, _):
-        done_exercises = find_dicts_difference(
-            self.start_exercises, self.remained_exercises)
-        write_csv(done_exercises)
+        self.cap.release()
+        done_exercises = find_dicts_difference(self.start_exercises, self.remained_exercises)
+        if done_exercises:
+            write_csv(done_exercises)
         self.close_signal.emit()

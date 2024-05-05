@@ -1,7 +1,10 @@
 import os
 import json
 from video_gui import VideoWindow
+from workout import exercises_names
 from save_new_set_window import SaveNewSetWindow
+from add_user_window import AddUserWindow
+from sync_data_window import SyncDataWindow
 from stats import show_stats
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -16,7 +19,8 @@ from PyQt5.QtWidgets import (
     QStyle,
     QHBoxLayout,
     QComboBox,
-    QMessageBox)
+    QMessageBox,
+)
 
 
 class MainWindow(QMainWindow):
@@ -32,6 +36,14 @@ class MainWindow(QMainWindow):
 
         self.layout = QVBoxLayout()
         self.central_widget.setLayout(self.layout)
+
+        self.set_of_users_label = QLabel('Выберите пользователя')
+        self.set_of_users = QComboBox()
+        self.load_users()
+        self.add_user_button = QPushButton('Добавить пользователя')
+        self.add_user_button.clicked.connect(self.add_user)
+        self.remove_user_button = QPushButton('Удалить пользователя')
+        self.remove_user_button.clicked.connect(self.remove_user)
 
         self.table = QTableWidget()
         self.table.setColumnCount(2)
@@ -64,9 +76,16 @@ class MainWindow(QMainWindow):
 
         self.stats_button = QPushButton('Показать статистику')
         self.stats_button.clicked.connect(self.on_show_stats_click)
+        self.sync_button = QPushButton('Синхронизировать данные')
+        self.sync_button.clicked.connect(self.sync_button_clicked)
 
         self.start_button = QPushButton('Начать')
         self.start_button.clicked.connect(self.open_video_window)
+
+        self.users_layout = QHBoxLayout()
+        self.users_layout.addWidget(self.set_of_users)
+        self.users_layout.addWidget(self.add_user_button)
+        self.users_layout.addWidget(self.remove_user_button)
 
         self.up_down_buttons_layout = QHBoxLayout()
         self.up_down_buttons_layout.addWidget(self.move_up_button)
@@ -77,22 +96,20 @@ class MainWindow(QMainWindow):
         self.set_save_layout.addWidget(self.save_set_button)
         self.set_save_layout.addWidget(self.delete_set_button)
 
+        self.stats_sync_layout = QHBoxLayout()
+        self.stats_sync_layout.addWidget(self.stats_button)
+        self.stats_sync_layout.addWidget(self.sync_button)
+
+        self.layout.addWidget(self.set_of_users_label)
+        self.layout.addLayout(self.users_layout)
         self.layout.addWidget(self.table)
         self.layout.addLayout(self.up_down_buttons_layout)
         self.layout.addWidget(self.set_of_exercises_label)
         self.layout.addLayout(self.set_save_layout)
-        self.layout.addWidget(self.stats_button)
+        self.layout.addLayout(self.stats_sync_layout)
         self.layout.addWidget(self.start_button)
 
     def init_table(self):
-        exercises_names = [
-            'Сгибания в локтях',
-            'Приседания',
-            'Наклоны корпуса вперед',
-            'Наклоны корпуса в стороны',
-            'Наклоны головы в стороны'
-        ]
-
         for exercise in exercises_names:
             row = self.table.rowCount()
             self.table.insertRow(row)
@@ -124,8 +141,9 @@ class MainWindow(QMainWindow):
 
         self.table.insertRow(selected_row - 1)
         for column in range(self.table.columnCount()):
-            self.table.setItem(selected_row - 1, column,
-                               self.table.takeItem(selected_row + 1, column))
+            self.table.setItem(
+                selected_row - 1, column, self.table.takeItem(selected_row + 1, column)
+            )
         self.table.removeRow(selected_row + 1)
         self.table.selectRow(selected_row - 1)
 
@@ -136,8 +154,7 @@ class MainWindow(QMainWindow):
 
         self.table.insertRow(selected_row + 2)
         for column in range(self.table.columnCount()):
-            self.table.setItem(selected_row + 2, column,
-                               self.table.takeItem(selected_row, column))
+            self.table.setItem(selected_row + 2, column, self.table.takeItem(selected_row, column))
         self.table.removeRow(selected_row)
         self.table.selectRow(selected_row + 1)
 
@@ -157,6 +174,29 @@ class MainWindow(QMainWindow):
         except ValueError:
             item.setText('0')
             self.display_warning('Введите положительное число')
+
+    def load_users(self):
+        self.set_of_users.clear()
+        users = os.listdir('users')
+        self.set_of_users.addItems(users)
+
+    def add_user(self):
+        self.setEnabled(False)
+        self.add_user_window = AddUserWindow()
+        self.add_user_window.close_signal.connect(lambda: self.setEnabled(True))
+        self.add_user_window.close_signal.connect(self.load_users)
+        self.add_user_window.show()
+
+    def remove_user(self):
+        selected_user = self.set_of_users.currentText()
+        if selected_user == '':
+            self.display_warning('Пользователей не найдено')
+            return
+
+        selected_user_directory = os.path.join('users', selected_user)
+        if os.path.exists(selected_user_directory):
+            os.rmdir(selected_user_directory)
+        self.load_users()
 
     def load_sets(self):
         self.set_of_exercises.clear()
@@ -209,8 +249,7 @@ class MainWindow(QMainWindow):
         else:
             self.setEnabled(False)
             self.save_new_set_window = SaveNewSetWindow(exercises)
-            self.save_new_set_window.close_signal.connect(
-                lambda: self.setEnabled(True))
+            self.save_new_set_window.close_signal.connect(lambda: self.setEnabled(True))
             self.save_new_set_window.close_signal.connect(self.load_sets)
             self.save_new_set_window.show()
 
@@ -229,6 +268,15 @@ class MainWindow(QMainWindow):
             json.dump(sets, json_file, indent=4, ensure_ascii=False)
         self.load_sets()
 
+    def sync_button_clicked(self):
+        selected_user = self.set_of_users.currentText()
+        if selected_user == '':
+            self.display_warning('Пользователь не выбран')
+            return
+
+        self.sync_data_window = SyncDataWindow(selected_user)
+        self.sync_data_window.show()
+
     def on_show_stats_click(self):
         path = 'data.csv'
         if not os.path.exists(path):
@@ -240,8 +288,7 @@ class MainWindow(QMainWindow):
         exercises = self.get_table_data()
         if any(value > 0 for value in exercises.values()):
             self.video_window = VideoWindow(exercises)
-            self.video_window.close_signal.connect(
-                lambda: self.setEnabled(True))
+            self.video_window.close_signal.connect(lambda: self.setEnabled(True))
             self.video_window.show()
             self.setEnabled(False)
         else:

@@ -1,0 +1,19 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.5.12",
+    "express": "^4.19.2",
+    "express-fileupload": "^1.5.0",
+    "express-zip": "^3.0.0",
+    "sqlite3": "^5.1.7"
+  }
+}
