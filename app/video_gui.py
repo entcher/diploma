@@ -17,8 +17,10 @@ class VideoWindow(QWidget):
     mp_pose = mp.solutions.pose
     pose = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    def __init__(self, exercises):
+    def __init__(self, exercises, current_user):
         super().__init__()
+
+        self.current_user = current_user
 
         self.setWindowTitle('Видео')
         self.setGeometry(100, 100, 640, 480)
@@ -91,5 +93,5 @@ class VideoWindow(QWidget):
         self.cap.release()
         done_exercises = find_dicts_difference(self.start_exercises, self.remained_exercises)
         if done_exercises:
-            write_csv(done_exercises)
+            write_csv(done_exercises, self.current_user)
         self.close_signal.emit()

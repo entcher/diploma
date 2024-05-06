@@ -5,20 +5,21 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
 
-def write_csv(data: dict[str, int]):
-    if not os.path.exists('data.csv'):
-        with open('data.csv', 'x') as file:
+def write_csv(data: dict[str, int], current_user: str):
+    path = os.path.join('users', current_user, 'data.csv')
+    if not os.path.exists(path):
+        with open(path, 'x') as file:
             file.write('Дата,Упражнения,Количество повторений\n')
 
-    with open('data.csv', 'a') as file:
+    with open(path, 'a') as file:
         date = datetime.now()
         date_str = date.strftime('%Y-%m-%d')
         for key, value in data.items():
             file.write(f'{date_str},{key},{value}\n')
 
 
-def show_stats():
-    path = 'data.csv'
+def show_stats(current_user: str):
+    path = os.path.join('users', current_user, 'data.csv')
     df = pd.read_csv(path)
     df['Дата'] = pd.to_datetime(df['Дата'])
     pivot_table = df.pivot_table(

@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  server:
+    build: ./server
+    container_name: server
+    ports:
+      - 3000:3000
+    volumes:
+      - files:/server/files
+
+volumes:
+  files:

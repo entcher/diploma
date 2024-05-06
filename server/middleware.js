@@ -13,7 +13,6 @@ function filterFiles(req, res, next) {
     const allowedTypes = ['application/zip']
     const file = req.files.file
 
-    console.log(file.mimetype)
     if (!allowedTypes.includes(file.mimetype)) {        
         res.status(400).send('Не тот формат файла')
         return

@@ -202,7 +202,8 @@ class MainWindow(QMainWindow):
         self.set_of_exercises.clear()
 
         sets = ['Новый']
-        path = 'saved_sets.json'
+        current_user = self.set_of_users.currentText()
+        path = os.path.join('users', current_user, 'saved_sets.json')
         if not os.path.exists(path):
             self.set_of_exercises.addItems(sets)
             return
@@ -218,7 +219,8 @@ class MainWindow(QMainWindow):
             self.fill_table_with_zeros()
             return
 
-        path = 'saved_sets.json'
+        current_user = self.set_of_users.currentText()
+        path = os.path.join('users', current_user, 'saved_sets.json')
         if not os.path.exists(path):
             return
 
@@ -239,7 +241,8 @@ class MainWindow(QMainWindow):
         selected_set = self.set_of_exercises.currentText()
 
         if selected_set != 'Новый':
-            path = 'saved_sets.json'
+            current_user = self.set_of_users.currentText()
+            path = os.path.join('users', current_user, 'saved_sets.json')
             with open(path, 'r') as json_file:
                 sets = json.load(json_file)
 
@@ -259,7 +262,8 @@ class MainWindow(QMainWindow):
             self.fill_table_with_zeros()
             return
 
-        path = 'saved_sets.json'
+        current_user = self.set_of_users.currentText()
+        path = os.path.join('users', current_user, 'saved_sets.json')
         with open(path, 'r') as json_file:
             sets = json.load(json_file)
         sets.pop(selected_set, None)
@@ -278,16 +282,22 @@ class MainWindow(QMainWindow):
         self.sync_data_window.show()
 
     def on_show_stats_click(self):
-        path = 'data.csv'
+        current_user = self.set_of_users.currentText()
+        path = os.path.join('users', current_user, 'data.csv')
         if not os.path.exists(path):
             self.display_warning('Файл со статистикой не найден')
         else:
-            show_stats()
+            show_stats(current_user)
 
     def open_video_window(self):
         exercises = self.get_table_data()
+        current_user = self.set_of_users.currentText()
+        if current_user == '':
+            QMessageBox.critical(None, 'Ошибка', 'Создайте пользователя')
+            return
+
         if any(value > 0 for value in exercises.values()):
-            self.video_window = VideoWindow(exercises)
+            self.video_window = VideoWindow(exercises, current_user)
             self.video_window.close_signal.connect(lambda: self.setEnabled(True))
             self.video_window.show()
             self.setEnabled(False)
