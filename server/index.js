@@ -23,23 +23,30 @@ app.get('/', (req, res) => {
 })
 
 app.post('/', filterFiles, (req, res) => {
-    const key = req.query.key
     const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
 
-    if (!key) {
-        let newKey = generateKey()
-        while (filesNames.includes(newKey))
-            newKey = generateKey()
+    let newKey = generateKey()
+    while (filesNames.includes(newKey))
+        newKey = generateKey()
 
-        if (checkZipContentFromRequest(req)) {
-            saveFileFromRequest(req, newKey)
-            res.json({ 'key': newKey })
-        }
-        else {
-            res.sendStatus(415)
-        }
+    if (checkZipContentFromRequest(req)) {
+        saveFileFromRequest(req, newKey)
+        res.json({ 'key': newKey })
     }
-    else if (filesNames.includes(key)) {
+    else {
+        res.sendStatus(415)
+    }
+})
+
+app.put('/', filterFiles, (req, res) => {
+    const key = req.query.key
+    if (!key) {
+        res.sendStatus(400)
+        return
+    }
+
+    const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
+    if (filesNames.includes(key)) {
         if (checkZipContentFromRequest(req)) {
             saveFileFromRequest(req, key)
             res.sendStatus(202)

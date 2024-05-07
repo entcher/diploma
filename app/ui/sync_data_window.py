@@ -31,8 +31,11 @@ class SyncDataWindow(QWidget):
         self.download_button = QPushButton('Загрузить данные с сервера')
         self.download_button.clicked.connect(self.download_button_clicked)
 
-        self.upload_button = QPushButton('Сохранить текущие данные')
+        self.upload_button = QPushButton('Сохранить текущие данные на сервер')
         self.upload_button.clicked.connect(self.upload_button_clicked)
+
+        self.update_button = QPushButton('Обновить существующие данные на сервере')
+        self.update_button.clicked.connect(self.update_button_clicked)
 
         self.delete_button = QPushButton('Удалить данные с сервера')
         self.delete_button.clicked.connect(self.delete_button_clicked)
@@ -41,15 +44,16 @@ class SyncDataWindow(QWidget):
         self.layout.addWidget(self.input)
         self.layout.addWidget(self.download_button)
         self.layout.addWidget(self.upload_button)
+        self.layout.addWidget(self.update_button)
         self.layout.addWidget(self.delete_button)
 
     def download_button_clicked(self):
-        url = 'http://localhost:3000'
         key = self.input.text()
         if key == '':
             QMessageBox.critical(None, 'Ошибка', 'Невозможно получить ваши данные без ключа')
             return
 
+        url = 'http://localhost:3000'
         params = {'key': key}
         response = requests.get(url, params)
         if response.status_code == 200:
@@ -58,10 +62,10 @@ class SyncDataWindow(QWidget):
                 unzipper.extractall(path)
             QMessageBox.information(None, 'Успешно', 'Ваши данные успешно обновлены')
             self.close()
-        elif response.status_code == 404:
-            QMessageBox.critical(None, 'Ошибка', 'Сохранений по данному ключу не найдено')
         else:
-            QMessageBox.critical(None, 'Ошибка', 'Неизвестная ошибка')
+            QMessageBox.critical(
+                None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
+            )
 
     def upload_button_clicked(self):
         buffer = BytesIO()
@@ -75,18 +79,14 @@ class SyncDataWindow(QWidget):
                     zipper.writestr(file_name, file_content)
 
         url = 'http://localhost:3000'
-        key = self.input.text()
-        params = {'key': key}
         response = requests.post(
-            url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}, params=params
+            url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}
         )
 
         if response.status_code == 200:
             new_key = response.json()['key']
             self.copy_key_window = CopyKeyWindow(new_key)
             self.copy_key_window.show()
-        elif response.status_code == 202:
-            QMessageBox.information(None, 'Успех', 'Данные успешно обновлены')
         elif response.status_code == 404:
             QMessageBox.critical(None, 'Ошибка', 'Сохранений по данному ключу не найдено')
         else:
@@ -94,18 +94,46 @@ class SyncDataWindow(QWidget):
                 None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
             )
 
-    def delete_button_clicked(self):
+    def update_button_clicked(self):
+        key = self.input.text()
+        if key == '':
+            QMessageBox.critical(None, 'Ошибка', 'Невозможно обновить ваши данные без ключа')
+            return
+
+        buffer = BytesIO()
+        user_directory = os.path.join('users', self.selected_user)
+        files_names = os.listdir(user_directory)
+        with zipfile.ZipFile(buffer, 'w') as zipper:
+            for file_name in files_names:
+                file_path = os.path.join(user_directory, file_name)
+                with open(file_path, 'r') as f:
+                    file_content = f.read()
+                    zipper.writestr(file_name, file_content)
+
         url = 'http://localhost:3000'
+        params = {'key': key}
+        response = requests.put(
+            url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}, params=params
+        )
+        if response.status_code == 202:
+            QMessageBox.information(None, 'Успех', 'Данные успешно обновлены')
+        else:
+            QMessageBox.critical(
+                None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
+            )
+
+    def delete_button_clicked(self):
         key = self.input.text()
         if key == '':
             QMessageBox.critical(None, 'Ошибка', 'Невозможно удалить ваши данные без ключа')
             return
 
+        url = 'http://localhost:3000'
         params = {'key': key}
         response = requests.delete(url, params=params)
         if response.status_code == 202:
             QMessageBox.information(None, 'Успех', 'Данные успешно удалены')
-        elif response.status_code == 400:
-            QMessageBox.critical(None, 'Ошибка', 'Неверный формат запроса')
-        elif response.status_code == 404:
-            QMessageBox.critical(None, 'Ошибка', 'Введен несуществующий ключ')
+        else:
+            QMessageBox.critical(
+                None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
+            )
