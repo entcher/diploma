@@ -1,10 +1,10 @@
 import os
 import json
-from video_gui import VideoWindow
-from workout import exercises_names
-from save_new_set_window import SaveNewSetWindow
-from add_user_window import AddUserWindow
-from sync_data_window import SyncDataWindow
+from .video_window import VideoWindow
+from models.workout import exercises_names
+from .save_new_set_window import SaveNewSetWindow
+from .add_user_window import AddUserWindow
+from .sync_data_window import SyncDataWindow
 from stats import show_stats
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (

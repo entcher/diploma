@@ -1,4 +1,4 @@
-from point import *
+from .point import *
 from enum import Enum
 import mediapipe as mp
 

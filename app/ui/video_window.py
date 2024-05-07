@@ -1,5 +1,5 @@
-from workout import Workout, Phase
-from ui_writer import *
+from models.workout import Workout, Phase
+from .ui_writer import *
 from stats import write_csv
 from utility import find_dicts_difference
 

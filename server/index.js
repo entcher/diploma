@@ -24,22 +24,22 @@ app.get('/', (req, res) => {
 
 app.post('/', filterFiles, (req, res) => {
     const key = req.query.key
-    const files = fs.readdirSync('files')
-    
+    const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
+
     if (!key) {
         let newKey = generateKey()
-        while (files.includes(newKey))
+        while (filesNames.includes(newKey))
             newKey = generateKey()
 
         if (checkZipContentFromRequest(req)) {
             saveFileFromRequest(req, newKey)
             res.json({ 'key': newKey })
         }
-        else {            
+        else {
             res.sendStatus(415)
         }
     }
-    else if (files.includes(key)) {
+    else if (filesNames.includes(key)) {
         if (checkZipContentFromRequest(req)) {
             saveFileFromRequest(req, key)
             res.sendStatus(202)
@@ -47,6 +47,25 @@ app.post('/', filterFiles, (req, res) => {
         else {
             res.sendStatus(415)
         }
+    }
+    else {
+        res.sendStatus(404)
+    }
+})
+
+app.delete('/', (req, res) => {
+    const key = req.query.key
+
+    if (!key) {
+        res.sendStatus(400)
+        return
+    }
+
+    const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
+    if (filesNames.includes(key)) {
+        deletingFile = path.resolve('files', `${key}.zip`)
+        fs.unlinkSync(deletingFile)
+        res.sendStatus(202)
     }
     else {
         res.sendStatus(404)

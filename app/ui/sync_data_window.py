@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 import zipfile
 import requests
-from copy_key_window import CopyKeyWindow
+from .copy_key_window import CopyKeyWindow
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -34,10 +34,14 @@ class SyncDataWindow(QWidget):
         self.upload_button = QPushButton('Сохранить текущие данные')
         self.upload_button.clicked.connect(self.upload_button_clicked)
 
+        self.delete_button = QPushButton('Удалить данные с сервера')
+        self.delete_button.clicked.connect(self.delete_button_clicked)
+
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.input)
         self.layout.addWidget(self.download_button)
         self.layout.addWidget(self.upload_button)
+        self.layout.addWidget(self.delete_button)
 
     def download_button_clicked(self):
         url = 'http://localhost:3000'
@@ -76,7 +80,7 @@ class SyncDataWindow(QWidget):
         response = requests.post(
             url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}, params=params
         )
-        
+
         if response.status_code == 200:
             new_key = response.json()['key']
             self.copy_key_window = CopyKeyWindow(new_key)
@@ -89,3 +93,19 @@ class SyncDataWindow(QWidget):
             QMessageBox.critical(
                 None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
             )
+
+    def delete_button_clicked(self):
+        url = 'http://localhost:3000'
+        key = self.input.text()
+        if key == '':
+            QMessageBox.critical(None, 'Ошибка', 'Невозможно удалить ваши данные без ключа')
+            return
+
+        params = {'key': key}
+        response = requests.delete(url, params=params)
+        if response.status_code == 202:
+            QMessageBox.information(None, 'Успех', 'Данные успешно удалены')
+        elif response.status_code == 400:
+            QMessageBox.critical(None, 'Ошибка', 'Неверный формат запроса')
+        elif response.status_code == 404:
+            QMessageBox.critical(None, 'Ошибка', 'Введен несуществующий ключ')
