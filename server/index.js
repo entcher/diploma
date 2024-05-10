@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { filterFiles } = require('./middleware.js')
-const { generateKey, checkZipContentFromRequest, saveFileFromRequest } = require('./utility.js')
+const { checkZipContentFromRequest, saveFileFromRequest } = require('./utility.js')
 
 const fileUpload = require('express-fileupload')
 const express = require('express')
@@ -23,15 +23,21 @@ app.get('/', (req, res) => {
 })
 
 app.post('/', filterFiles, (req, res) => {
-    const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
+    const key = req.query.key
+    if (!key) {
+        res.sendStatus(400)
+        return
+    }
 
-    let newKey = generateKey()
-    while (filesNames.includes(newKey))
-        newKey = generateKey()
+    const filesNames = fs.readdirSync('files').map(file => path.parse(file).name)
+    if (filesNames.includes(key)) {
+        res.sendStatus(400)
+        return
+    }
 
     if (checkZipContentFromRequest(req)) {
-        saveFileFromRequest(req, newKey)
-        res.json({ 'key': newKey })
+        saveFileFromRequest(req, key)
+        res.sendStatus(200)
     }
     else {
         res.sendStatus(415)

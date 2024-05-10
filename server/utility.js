@@ -1,15 +1,5 @@
-const fs = require('fs')
 const path = require('path')
 const AdmZip = require('adm-zip')
-
-function generateKey() {
-	const LENGTH = 20
-	const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-	let key = ''
-	for (let i = 0; i < LENGTH; i++)
-		key += charset.charAt(Math.floor(Math.random() * charset.length))
-	return key
-}
 
 function checkZipContentFromRequest(req) {
 	const zip = new AdmZip(req.files.file.data)
@@ -34,7 +24,6 @@ function saveFileFromRequest(req, key) {
 }
 
 module.exports = {
-	generateKey,
 	checkZipContentFromRequest,
 	saveFileFromRequest
 }

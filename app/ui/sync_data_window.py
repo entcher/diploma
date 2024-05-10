@@ -1,8 +1,8 @@
 import os
+import re
 from io import BytesIO
 import zipfile
 import requests
-from .copy_key_window import CopyKeyWindow
 from PyQt5.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -68,6 +68,14 @@ class SyncDataWindow(QWidget):
             )
 
     def upload_button_clicked(self):
+        key = self.input.text()
+        if key == '':
+            QMessageBox.critical(None, 'Ошибка', 'Невозможно получить ваши данные без ключа')
+            return
+        elif not validate_filename(key):
+            QMessageBox.critical(None, 'Ошибка', 'Ключ должен состоять из цифр, букв и точек')
+            return
+
         buffer = BytesIO()
         user_directory = os.path.join('users', self.selected_user)
         files_names = os.listdir(user_directory)
@@ -79,14 +87,13 @@ class SyncDataWindow(QWidget):
                     zipper.writestr(file_name, file_content)
 
         url = 'http://localhost:3000'
+        params = {'key': key}
         response = requests.post(
-            url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}
+            url, files={'file': ('file.zip', buffer.getvalue(), 'application/zip')}, params=params
         )
 
         if response.status_code == 200:
-            new_key = response.json()['key']
-            self.copy_key_window = CopyKeyWindow(new_key)
-            self.copy_key_window.show()
+            QMessageBox.information(None, 'Успех', 'Фалы успешно сохранены')
         elif response.status_code == 404:
             QMessageBox.critical(None, 'Ошибка', 'Сохранений по данному ключу не найдено')
         else:
@@ -137,3 +144,8 @@ class SyncDataWindow(QWidget):
             QMessageBox.critical(
                 None, 'Ошибка', f'{response.text}\nКод ошибки: {response.status_code}'
             )
+
+
+def validate_filename(s: str):
+    pattern = r'^[a-zA-Zа-яА-Я0-9.]+$'
+    return bool(re.match(pattern, s))

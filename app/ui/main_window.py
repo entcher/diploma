@@ -39,7 +39,7 @@ class MainWindow(QMainWindow):
 
         self.set_of_users_label = QLabel('Выберите пользователя')
         self.set_of_users = QComboBox()
-        self.load_users()
+        self.set_of_users.currentIndexChanged.connect(self.user_changed)
         self.add_user_button = QPushButton('Добавить пользователя')
         self.add_user_button.clicked.connect(self.add_user)
         self.remove_user_button = QPushButton('Удалить пользователя')
@@ -108,6 +108,8 @@ class MainWindow(QMainWindow):
         self.layout.addLayout(self.set_save_layout)
         self.layout.addLayout(self.stats_sync_layout)
         self.layout.addWidget(self.start_button)
+
+        self.load_users()
 
     def init_table(self):
         for exercise in exercises_names:
@@ -197,6 +199,9 @@ class MainWindow(QMainWindow):
         if os.path.exists(selected_user_directory):
             os.rmdir(selected_user_directory)
         self.load_users()
+
+    def user_changed(self):
+        self.load_sets()
 
     def load_sets(self):
         self.set_of_exercises.clear()
