@@ -1,4 +1,5 @@
 import os
+import shutil
 import json
 from .video_window import VideoWindow
 from models.workout import exercises_names
@@ -197,7 +198,8 @@ class MainWindow(QMainWindow):
 
         selected_user_directory = os.path.join('users', selected_user)
         if os.path.exists(selected_user_directory):
-            os.rmdir(selected_user_directory)
+            shutil.rmtree(selected_user_directory)
+
         self.load_users()
 
     def user_changed(self):
