@@ -42,9 +42,12 @@ class AddUserWindow(QWidget):
             QMessageBox.warning(None, 'Ошибка', 'Пользователь уже существует\nВведите другое имя')
             return
 
-        os.mkdir(f'users/{username}')
-        QMessageBox.information(None, 'Успешно', 'Пользователь успешно добавлен')
-        self.close()
+        try:
+            os.mkdir(f'users/{username}')
+            QMessageBox.information(None, 'Успешно', 'Пользователь успешно добавлен')
+            self.close()
+        except:
+            QMessageBox.warning(None, 'Ошибка', 'Выберите другое имя пользователя')
 
     def closeEvent(self, _):
         self.close_signal.emit()

@@ -15,7 +15,8 @@ def write_csv(data: dict[str, int], current_user: str):
         date = datetime.now()
         date_str = date.strftime('%Y-%m-%d')
         for key, value in data.items():
-            file.write(f'{date_str},{key},{value}\n')
+            if value > 0:
+                file.write(f'{date_str},{key},{value}\n')
 
 
 def show_stats(current_user: str):

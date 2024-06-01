@@ -37,8 +37,8 @@ class Workout:
         exercises_funcs = [
             self.degree_exercise(phase, 'NOSE', 'LEFT_EAR', 'LEFT_SHOULDER', 110, 80),
             self.degree_exercise(phase, 'NOSE', 'RIGHT_EAR', 'RIGHT_SHOULDER', 110, 80),
-            self.raise_hands_forward,
-            self.raise_hands_sideways,
+            self.raise_hands_forward(phase),
+            self.raise_hands_sideways(phase),
             self.degree_exercise(phase, 'LEFT_SHOULDER', 'LEFT_ELBOW', 'LEFT_WRIST', 140, 50),
             self.degree_exercise(phase, 'RIGHT_SHOULDER', 'RIGHT_ELBOW', 'RIGHT_WRIST', 140, 50),
             self.degree_exercise(phase, 'LEFT_SHOULDER', 'LEFT_ELBOW', 'LEFT_WRIST', 50, 140),
@@ -48,7 +48,7 @@ class Workout:
             self.degree_exercise(phase, 'RIGHT_SHOULDER', 'RIGHT_HIP', 'RIGHT_KNEE', 170, 160),
             self.degree_exercise(phase, 'LEFT_HIP', 'LEFT_KNEE', 'LEFT_ANKLE', 170, 90),
             self.degree_exercise(phase, 'RIGHT_HIP', 'RIGHT_KNEE', 'RIGHT_ANKLE', 170, 90),
-            self.squat,
+            self.squat(phase),
         ]
 
         exercises_funcs = dict(zip(exercises_names, exercises_funcs))
